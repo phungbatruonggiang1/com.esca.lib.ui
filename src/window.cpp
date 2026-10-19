@@ -221,8 +221,15 @@ void registry_global(void *data, wl_registry *registry, uint32_t name, const cha
     } else if (std::strcmp(interface, wl_shm_interface.name) == 0) {
         impl->shm = static_cast<wl_shm *>(wl_registry_bind(registry, name, &wl_shm_interface, 1));
     } else if (std::strcmp(interface, wl_seat_interface.name) == 0) {
+        // Version 1 deliberately. wl_pointer grew events with every version
+        // -- frame and the axis family at 5, axis_value120 at 8 -- and a
+        // listener that does not supply every one of them for the version it
+        // bound gets a NULL function pointer and libwayland aborts the
+        // process. Binding version 1 asks for exactly the five events this
+        // toolkit uses, and stays correct as the protocol grows.
+        (void)version;
         impl->seat = static_cast<wl_seat *>(
-            wl_registry_bind(registry, name, &wl_seat_interface, version < 5 ? version : 5));
+            wl_registry_bind(registry, name, &wl_seat_interface, 1));
         wl_seat_add_listener(impl->seat, &kSeatListener, impl);
     } else if (std::strcmp(interface, xdg_wm_base_interface.name) == 0) {
         impl->wm_base = static_cast<xdg_wm_base *>(
